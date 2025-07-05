@@ -48,7 +48,7 @@ export default async function AccountsPage ({params}: AccountsPageProps) {
 
         {/* Transactions Section */}
         <Suspense
-            fallback={<BarLoader className="mt-4" width={"100%"} color="#green" />}
+            fallback={<BarLoader className="mt-4" width={"100%"} color="green" />}
         >
             <TransactionTable transactions={transactions}/>
         </Suspense>

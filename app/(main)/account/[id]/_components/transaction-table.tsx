@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useMemo } from 'react'
+import React, { use, useEffect, useMemo } from 'react'
 import {
   Table,
   TableBody,
@@ -32,6 +32,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Button } from '@/components/ui/button';
+import { bulkDeleteTransactions } from '@/actions/accounts';
+import useFetch from '@/hooks/use-fetch';
+import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { BarLoader } from 'react-spinners';
 
 type Transaction = {
   id: string;
@@ -147,11 +152,26 @@ const TransactionTable = ({transactions}: TransactionTableProps) => {
     }
   };
 
+  const {
+    loading: deleteLoading,
+    fn: deleteFn,
+    data: deleted,
+  } = useFetch(bulkDeleteTransactions);
+
   // Handle bulk delete of selected transactions
-  const handleBulkDelete = () => {
-    console.log(`Delete transactions with ids: ${selectedIds.join(', ')}`);
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} transactions?`)) {
+      return;
+    }
+    deleteFn(selectedIds)
     setSelectedIds([]);
   }
+
+  useEffect(() => {
+    if (deleted && !deleteLoading) {
+      toast.success("Transactions deleted successfully");
+    }
+  }, [deleted, deleteLoading]);
 
   // Clear all filters and search term
   const handleClearFilters = () => {
@@ -163,6 +183,8 @@ const TransactionTable = ({transactions}: TransactionTableProps) => {
 
   return (
     <div className='space-y-8'>
+      {deleteLoading && (<BarLoader className="mt-4" width={"100%"} color="green" />)}
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -371,7 +393,7 @@ const TransactionTable = ({transactions}: TransactionTableProps) => {
                         <DropdownMenuItem 
                           className='text-destructive' 
                           onClick={() => {
-                            console.log(`Delete transaction with id: ${transaction.id}`);
+                            deleteFn([transaction.id]);
                           }}>
                           Delete
                         </DropdownMenuItem>

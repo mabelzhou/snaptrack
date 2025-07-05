@@ -2,12 +2,14 @@
 
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { tr } from "date-fns/locale";
 import { revalidatePath } from "next/cache";
 
 type UpdateDefaultAccountResult =
   | { success: true; data: any }
   | { success: false; error: unknown };
 
+// necessary to serialize numbers from Prisma Decimal type
 const serializeNumbers = (obj: any) => {
     const serialized = { ...obj };
     if (obj.balance) {
@@ -26,6 +28,7 @@ const serializeNumbers = (obj: any) => {
     }
     return serialized;
 };
+
 export async function updateDefaultAccount(accountId: any): Promise<UpdateDefaultAccountResult> {
 
   try {
@@ -40,7 +43,7 @@ export async function updateDefaultAccount(accountId: any): Promise<UpdateDefaul
       throw new Error("User not found");
     }
 
-    // First, unset any existing default account
+    //  unset any existing default account
     await db.account.updateMany({
       where: {
         userId: user.id,
@@ -49,7 +52,7 @@ export async function updateDefaultAccount(accountId: any): Promise<UpdateDefaul
       data: { isDefault: false },
     });
 
-    // Then set the new default account
+    //  set the new default account
     const account = await db.account.update({
       where: {
         id: accountId,
@@ -59,6 +62,8 @@ export async function updateDefaultAccount(accountId: any): Promise<UpdateDefaul
     });
 
     revalidatePath("/dashboard");
+
+    // return the updated account with serialized numbers
     return { success: true, data: serializeNumbers(account) };
   } catch (error) {
     return { success: false, error: error };
@@ -67,6 +72,7 @@ export async function updateDefaultAccount(accountId: any): Promise<UpdateDefaul
 
 export async function getAccountWithTransactions(accountId: string) {
   try {
+    // Ensure the user is authenticated
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
@@ -78,6 +84,7 @@ export async function getAccountWithTransactions(accountId: string) {
       throw new Error("User not found");
     }
 
+    // Fetch the account with its transactions
     const account = await db.account.findUnique({
       where: { id: accountId },
       include: {
@@ -94,11 +101,65 @@ export async function getAccountWithTransactions(accountId: string) {
       return null;
     }
 
+    // Serialize numbers in the account and its transactions
     return {
       ...serializeNumbers(account),
       transactions: account.transactions.map(serializeNumbers),
     }
   } catch (error) {
     throw error;
+  }
+}
+
+export async function bulkDeleteTransactions(transactionIds: string[]) {
+  try {
+    // Ensure the user is authenticated
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // delete the transactions
+    const deletedTransactions = await db.transaction.deleteMany({
+      where: {
+        id: { in: transactionIds },
+        account: { userId: user.id },
+      },
+    });
+
+    // get transactions remaining
+    const transactions = await db.transaction.findMany({
+      where: { account: { userId: user.id } },
+    });
+
+    // recalculate account balances based on remaining transactions
+    const accountBalanceChanges = transactions.reduce<Record<string, number>>((acc, transaction) => {
+      const change = 
+        transaction.type === 'EXPENSE' ? -Number(transaction.amount) : Number(transaction.amount);
+      acc[transaction.accountId] = (acc[transaction.accountId] || 0) + change;
+      return acc;
+    }, {});
+
+    // update each account's balance
+    for (const [accountId, balanceChange] of Object.entries(accountBalanceChanges)) {
+      await db.account.update({
+        where: { id: accountId },
+        data: {
+          balance: balanceChange
+        },
+      });
+    }
+
+    revalidatePath("/dashboard");
+    revalidatePath("/account/[id]");
+    return { success: true, count: deletedTransactions.count };
+  } catch (error) {
+    return { success: false, error: error };
   }
 }
