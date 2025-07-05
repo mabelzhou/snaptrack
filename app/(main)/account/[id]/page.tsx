@@ -10,8 +10,7 @@ interface AccountsPageProps {
   };
 }
 
-async function AccountsPage (props: AccountsPageProps) {
-    const { params } = props;
+export default async function AccountsPage ({params}: AccountsPageProps) {
     const accountId = params.id;
     const accountData = await getAccountWithTransactions(accountId);
 
@@ -36,7 +35,10 @@ async function AccountsPage (props: AccountsPageProps) {
 
             <div className="text-right pb-2">
                 <div className="text-xl sm:text-2xl font-bold">
-                    ${parseFloat(account.balance).toFixed(2)}
+                    ${Number(account.balance).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                    })}
                 </div>
                 <p className="text-sm text-muted-foreground">
                     {account._count.transactions} Transactions
@@ -55,5 +57,3 @@ async function AccountsPage (props: AccountsPageProps) {
     
   )
 }
-
-export default AccountsPage
