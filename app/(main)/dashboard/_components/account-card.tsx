@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect } from 'react'
-import { Account, AccountType } from '@/lib/generated/prisma/client'
+import { Account } from '@/lib/generated/prisma/client'
 import {
   Card,
   CardContent,
@@ -17,14 +17,10 @@ import { updateDefaultAccount } from '@/actions/accounts';
 import { toast } from 'sonner';
 
 type AccountCardProps = {
-    name: string;
-    type: AccountType;
-    balance: number;
-    isDefault: boolean;
-    id: string;
+    account: Account;
 };
 
-const AccountCard: React.FC<AccountCardProps> = (account) => {
+const AccountCard = ({ account }: AccountCardProps) => {
 
     type UpdateDefaultAccountResult =
   | { success: true; data: any }
@@ -83,7 +79,7 @@ const AccountCard: React.FC<AccountCardProps> = (account) => {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            ${account.balance}
+            ${account.balance.toLocaleString()}
           </div>
           <p className="text-xs text-muted-foreground">
             {account.type.charAt(0) + account.type.slice(1).toLowerCase()} Account

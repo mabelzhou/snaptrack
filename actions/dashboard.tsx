@@ -119,8 +119,6 @@ export async function getUserAccounts() {
       },
     });
 
-    console.log("Fetched accounts:", accounts);
-
     const serializedAccounts = accounts.map(serializeNumbers);
 
     return serializedAccounts;
