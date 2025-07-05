@@ -88,6 +88,27 @@ const TransactionTable = ({transactions}: TransactionTableProps) => {
       result = result.filter((transaction) => transaction.isRecurring === isRecurring);
     }
 
+    // Sort transactions
+    if (sortConfig) {
+      result.sort((a, b) => {
+        let comparison = 0;
+        switch (sortConfig.field) {
+          case 'date':
+            comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+            break;
+          case 'category':
+            comparison = (a.category as string).localeCompare(b.category as string);
+            break;
+          case 'amount':
+            comparison = parseFloat(a.amount as string) - parseFloat(b.amount as string);
+            break;
+          default:
+            comparison = 0;
+        }
+        return sortConfig.direction === 'asc' ? comparison : -comparison;
+      });
+    }
+
     return result;
   }, [
     transactions,
