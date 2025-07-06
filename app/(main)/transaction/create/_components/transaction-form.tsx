@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { ReceiptScanner } from './receipt-scanner'
 
 export type Category = {
     id: string;
@@ -118,12 +119,27 @@ const AddTransactionForm = ({
         transactionFn(formData);
     };
 
+    const handleScanComplete = (scannedData: any) => {
+        if (scannedData) {
+            setValue("amount", scannedData.amount);
+            setValue("description", scannedData.description);
+            setValue("date", new Date(scannedData.date));
+            setValue("category", scannedData.category);
+            console.log("Scanned Data:", scannedData);
+        }
+    };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className='space-y-2'>
         {/* AI receipt scanner */}
+        <ReceiptScanner onScanComplete={handleScanComplete} />
+
         <div className='space-y-2'>
             <label className='text-sm font-md'>Type</label>
-            <Select>
+            <Select
+                onValueChange={(value) => setValue("type", value as "EXPENSE" | "INCOME")}
+                defaultValue={type}
+            >
                 <SelectTrigger className="w-full">
                     <SelectValue placeholder="All Types" />
                 </SelectTrigger>
@@ -191,19 +207,19 @@ const AddTransactionForm = ({
         <div className="space-y-2">
             <label className="text-sm font-medium">Category</label>
             <Select
-            onValueChange={(value) => setValue("category", value)}
-            defaultValue={getValues("category")}
+                onValueChange={(value) => setValue("category", value)}
+                defaultValue={getValues("category")}
             >
-            <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-                {filteredCategories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                </SelectItem>
-                ))}
-            </SelectContent>
+                <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                    {filteredCategories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                    </SelectItem>
+                    ))}
+                </SelectContent>
             </Select>
             {errors.category && (
             <p className="text-sm text-red-500">{errors.category.message}</p>
