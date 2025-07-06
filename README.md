@@ -5,7 +5,7 @@ A personal finance tracker built with modern web technologies — track your inc
 ---
 
 ### 🔗 [Live Demo](https://snaptrack-gold.vercel.app/)
-### 🔗 [Video Demo](youtu.be/hwoNukrYPv8)
+### 🔗 [Video Demo](https://www.youtube.com/watch?v=hwoNukrYPv8)
 
 ---
 
