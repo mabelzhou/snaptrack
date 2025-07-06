@@ -16,9 +16,18 @@ import useFetch from '@/hooks/use-fetch';
 import { updateDefaultAccount } from '@/actions/accounts';
 import { toast } from 'sonner';
 
-type AccountCardProps = {
-    account: Account;
-};
+interface AccountCardProps {
+  account: {
+    id: string;
+    name: string;
+    balance: number;
+    isDefault: boolean;
+    type: string;
+    userId: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+}
 
 const AccountCard = ({ account }: AccountCardProps) => {
 

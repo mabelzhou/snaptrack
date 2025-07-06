@@ -3,13 +3,10 @@
 import { categoryColors } from '@/data/categories';
 import { endOfDay, format, startOfDay, subDays } from 'date-fns';
 import React, { useMemo } from 'react'
-import { BarChart, Bar, Rectangle, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import {
   Card,
-  CardAction,
   CardContent,
-  CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"

@@ -59,9 +59,21 @@ async function DashboardPage() {
           </Card>
         </CreateAccountDrawer>
 
-        {(accounts ?? []).length > 0 && (accounts ?? []).map((account) => {
-          return <AccountCard key={account.id} account={account} />
-        })}
+        {accounts?.map((account) => (
+          <AccountCard
+            key={account.id}
+            account={{
+              id: account.id,
+              name: account.name,
+              balance: Number(account.balance),
+              isDefault: account.isDefault,
+              type: account.type,
+              userId: account.userId,
+              createdAt: account.createdAt,
+              updatedAt: account.updatedAt,
+            }}
+          />
+        ))}
       </div>
     </div>
   )
