@@ -39,10 +39,6 @@ const BudgetProgress = ({ initialBudget, currentExpenses }: BudgetProgressProps)
         error,
     } = useFetch(updateBudget);
 
-    type UpdateBudgetResult =
-    | { success: true; data: any }
-    | { success: false; error: unknown };
-
     const percentageUsed =
         initialBudget !== null && currentExpenses !== null
             ? (currentExpenses / Number(initialBudget.amount)) * 100
