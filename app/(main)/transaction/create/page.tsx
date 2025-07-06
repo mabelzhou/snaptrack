@@ -1,17 +1,23 @@
 import { getUserAccounts } from "@/actions/dashboard";
 import { defaultCategories } from "@/data/categories";
 import AddTransactionForm from "./_components/transaction-form";
+import { getTransaction } from "@/actions/transaction";
 
+type AddTransactionPageProps = {
+  searchParams: { [key: string]: string};
+};
 
-export default async function AddTransactionPage() {
+export default async function AddTransactionPage({searchParams}: AddTransactionPageProps) {
   const accounts = (await getUserAccounts()) ?? [];
-  // const editId = searchParams?.edit;
+  const editId = searchParams?.edit;
+
+  console.log("Edit ID:", editId);
 
   let initialData = null;
-  // if (editId) {
-  //   const transaction = await getTransaction(editId);
-  //   initialData = transaction;
-  // }
+  if (editId) {
+    const transaction = await getTransaction(editId);
+    initialData = transaction;
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-5">
@@ -21,6 +27,7 @@ export default async function AddTransactionPage() {
       <AddTransactionForm
         accounts={accounts}
         categories={defaultCategories}
+        editMode={!!editId}
         initialData={initialData}
       />
     </div>

@@ -189,3 +189,101 @@ export async function scanReceipt(file: File) {
     throw new Error(error instanceof Error ? error.message : String(error));
   }
 }
+
+export async function getTransaction(id: string) {
+  try {
+    // check user authentication
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await db.user.findUnique({
+        where: { clerkUserId: userId },
+    });
+
+    if (!user) throw new Error("User not found");
+
+    // get transaction
+    const transaction = await db.transaction.findUnique({
+      where: { id, userId: user.id },
+    });
+
+    if (!transaction) {
+      throw new Error("Transaction not found");
+    }
+
+    return serializeAmount(transaction);
+
+  } catch (error) {
+    console.error("Error getting transaction:", error);
+    throw new Error(error instanceof Error ? error.message : String(error));
+  }
+}
+
+export async function updateTransaction(id: string, data: any) {
+  try {
+    // check user authentication
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await db.user.findUnique({
+        where: { clerkUserId: userId },
+    });
+
+    if (!user) throw new Error("User not found");
+
+    // Get original transaction to calculate balance change
+    const originalTransaction = await db.transaction.findUnique({
+      where: {
+        id,
+        userId: user.id,
+      },
+      include: {
+        account: true,
+      },
+    });
+
+    if (!originalTransaction) throw new Error("Transaction not found");
+
+    // calculate balance change
+    const oldBalanceChange = originalTransaction.type === "EXPENSE" 
+      ? -originalTransaction.amount.toNumber()
+      : originalTransaction.amount.toNumber();
+
+    const newBalanceChange = data.type === "EXPENSE" 
+      ? -data.amount : data.amount;
+
+    const netBalanceChange = newBalanceChange - oldBalanceChange;
+
+    // Update transaction and balance in account
+    const transaction = await db.$transaction(async (tx) => {
+      const updatedTransaction = await tx.transaction.update({
+        where: { id },
+        data: {
+          ...data,
+          userId: user.id,
+          nextRecurringDate: 
+            data.isRecurring && data.recurringInterval 
+              ? calculateNextRecurringDate(data.date, data.recurringInterval) 
+              : null,
+        },
+      });
+
+      // Update account balance
+      await tx.account.update({
+        where: { id: data.accountId },
+        data: { balance: Number(originalTransaction.account.balance) + netBalanceChange },
+      });
+
+      return updatedTransaction;
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/account/${data.accountId}`);
+    
+    return { success: true, data: serializeAmount(transaction) };
+
+  } catch (error) {
+    console.error("Error getting transaction:", error);
+    throw new Error(error instanceof Error ? error.message : String(error));
+  }
+}

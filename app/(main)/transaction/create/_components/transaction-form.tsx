@@ -1,6 +1,6 @@
 "use client"
 
-import { createTransaction } from '@/actions/transaction'
+import { createTransaction, updateTransaction } from '@/actions/transaction'
 import { transactionSchema } from '@/app/lib/schema'
 import useFetch from '@/hooks/use-fetch'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -27,7 +27,7 @@ import { Calendar } from '@/components/ui/calendar'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { ReceiptScanner } from './receipt-scanner'
 
@@ -54,6 +54,8 @@ const AddTransactionForm = ({
     initialData = null,
 } : AddTransactionFormProps) => {
     const router = useRouter();
+    const searchParam = useSearchParams();
+    const editId = searchParam.get('edit');
 
     const {
         register,
@@ -65,7 +67,21 @@ const AddTransactionForm = ({
         reset,
     } = useForm({
         resolver: zodResolver(transactionSchema),
-        defaultValues: {
+        defaultValues: 
+            editMode && initialData
+            ? {
+                type: initialData.type,
+                amount: initialData.amount.toString(),
+                description: initialData.description,
+                accountId: initialData.accountId,
+                category: initialData.category,
+                date: new Date(initialData.date),
+                isRecurring: initialData.isRecurring,
+                ...(initialData.recurringInterval && {
+                recurringInterval: initialData.recurringInterval,
+            }),
+            }
+            :{
             type: 'EXPENSE',
             amount: '',
             description: '',
@@ -87,7 +103,7 @@ const AddTransactionForm = ({
         loading: transactionLoading,
         fn: transactionFn,
         data: transactionResult,
-    } = useFetch(createTransaction);
+    } = useFetch(editMode ? updateTransaction : createTransaction);
 
     useEffect(() => {
         if ((transactionResult as any)?.success && !transactionLoading) {
@@ -116,7 +132,12 @@ const AddTransactionForm = ({
         ...data,
         amount: parseFloat(data.amount),
         };
-        transactionFn(formData);
+
+        if (editMode) {
+            transactionFn(editId, formData);
+        } else {
+            transactionFn(formData);
+        }
     };
 
     const handleScanComplete = (scannedData: any) => {
@@ -150,7 +171,7 @@ const AddTransactionForm = ({
             </Select>
 
             {errors.type && (
-                <p className='text-red-500 text-sm'>{errors.type.message}</p>
+                <p className='text-red-500 text-sm'>{errors.type?.message as string}</p>
             )}
         </div>
 
@@ -165,7 +186,7 @@ const AddTransactionForm = ({
                     {...register("amount")}
                 />
                 {errors.amount && (
-                    <p className="text-sm text-red-500">{errors.amount.message}</p>
+                    <p className='text-red-500 text-sm'>{errors.type?.message as string}</p>
                 )}
             </div>
 
@@ -198,7 +219,7 @@ const AddTransactionForm = ({
                     </SelectContent>
                 </Select>
                 {errors.accountId && (
-                    <p className="text-sm text-red-500">{errors.accountId.message}</p>
+                    <p className='text-red-500 text-sm'>{errors.type?.message as string}</p>
                 )}
             </div>
         </div>
@@ -222,7 +243,7 @@ const AddTransactionForm = ({
                 </SelectContent>
             </Select>
             {errors.category && (
-            <p className="text-sm text-red-500">{errors.category.message}</p>
+                <p className='text-red-500 text-sm'>{errors.type?.message as string}</p>
             )}
         </div>
 
@@ -254,7 +275,7 @@ const AddTransactionForm = ({
                 </PopoverContent>
             </Popover>
             {errors.date && (
-                <p className="text-sm text-red-500">{errors.date.message}</p>
+                <p className='text-red-500 text-sm'>{errors.type?.message as string}</p>
             )}
         </div>
 
@@ -263,7 +284,7 @@ const AddTransactionForm = ({
             <label className="text-sm font-medium">Description</label>
             <Input placeholder="Enter description" {...register("description")} />
             {errors.description && (
-            <p className="text-sm text-red-500">{errors.description.message}</p>
+                <p className='text-red-500 text-sm'>{errors.type?.message as string}</p>
             )}
         </div>
 
@@ -301,7 +322,7 @@ const AddTransactionForm = ({
             </Select>
             {errors.recurringInterval && (
                 <p className="text-sm text-red-500">
-                {errors.recurringInterval.message}
+                    {typeof errors.recurringInterval?.message === "string" ? errors.recurringInterval.message : ""}
                 </p>
             )}
             </div>
