@@ -130,8 +130,6 @@ const AccountChart = ({ transactions }: AccountChartProps) => {
     );
   }, [transactions, dateRange]);
 
-  console.log("Filtered Data:", filteredData);
-
   const totals = useMemo(() => {
     return filteredData.reduce(
       (acc, day) => ({
